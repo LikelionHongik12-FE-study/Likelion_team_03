@@ -1,0 +1,842 @@
+### 함수 타입
+
+<aside>
+💡
+
+**함수를 설명하는 가장 좋은 방법**
+
+→ 어떤 [타입]의 매개변수를 받고, 어떤 [타입]의 결과값을 반환하는지 이야기
+
+</aside>
+
+```tsx
+function func(a: number,b: number){
+    return a+b;
+}
+
+const add=(a:number,b:number):number => a+b;
+//const add=(a:매개변수 타입, b: 매개변수 타입):반환값 타입 =>
+
+function introduce(name: string = '이제원', tall?:number){
+    console.log(`name: ${name}`);
+    if(typeof tall==='number'){  //타입 가드 사용
+	    console.log(`tall: ${tall+10}`);
+    }
+};
+
+introduce('이제원',174);
+
+introduce('구구구');
+```
+
+<aside>
+💡
+
+- 필수 매개변수와 선택적 매개변수(? 사용)을 동시에 사용할때는 필수 매개변수가 먼저 정의되고 이후에 선택적 매개변수가 정의되어야 함
+</aside>
+
+```tsx
+function getSum(...rest :number[]){
+    let sum=0;
+    rest.forEach((it)=>(sum+=it));
+
+    return sum;
+}
+
+getSum(1,2,3);
+getSum(1,2,3,4,5);
+```
+
+<aside>
+💡
+
+**…rest의 활용**
+
+- 매개변수의 개수가 불명확할때 매개변수 개별 요소들을 배열로 묶어주는 역할
+- forEach를 통해서 배열에 접근
+</aside>
+
+### 함수 타입 표현식과 호출 시그니처
+
+- 전에는함수를 선언할때 타입들을 매개변수들 마다 써주는 방식
+- 이제부터는 **타입**으로 따로 정의하여 틀을 만들어놓고 해보자
+
+- 함수 타입 표현식(방법1)
+
+```tsx
+type Operation=(a:number, b:number)=>number;
+
+const add:Operation=(a,b)=>a+b;
+const sub:Operation=(a,b)=>a-b;
+```
+
+- 호출 시그니처(방법2)
+
+```tsx
+type Operation2={
+    (a:number, b:number):number;
+};
+
+const add2: Operation2 = (a, b) => a + b;
+const sub2: Operation2 = (a, b) => a - b;
+```
+
+### 함수 타입의 호환성
+
+- **함수 타입의 호환성이란?** 특정 함수 타입을 다른 함수 타입으로 취급해도 괜찮은가를 판단하는 것
+
+<aside>
+💡
+
+**조건 1) 반환값의 타입이 호환되는가?**
+
+</aside>
+
+```tsx
+//조건1) 반환값이 호환되는가
+
+type A=()=>number;
+type B=()=>10;
+
+let a: A=()=>10;
+let b: B=()=>10;
+
+a=b;   //number타입에 리터럴 타입을 넣는 것은 가능(업캐스팅)
+//b=a; //리터럴 타입에 number타입을 넣을 수 없음(다운캐스팅)
+
+```
+
+<aside>
+💡
+
+**조건2) 매개변수의 타입이 호환되는가?**
+
+</aside>
+
+```tsx
+//조건2) 매개변수가 호환되는가
+//매개변수의 개수가 같을때
+
+type C=(value:number)=>void;
+type D=(value:10)=>void;
+
+let c: C=(value)=>{};
+let d: D=(value)=>{};
+
+//c=d;  //오류-> 앞에서와는 달리 업캐스팅할때 오류가 발생하고 다운캐스팅할때 제대로 동작
+d=c;    // 다운캐스팅이므로 잘 동작
+
+```
+
+- 이유는?
+    
+    ```tsx
+    type Animal={
+        name:string;
+    };
+    
+    type Dog={
+        name:string;
+        color: string;
+    };
+    
+    let animalFunc = (animal:Animal)=>{
+        console.log(animal.name);
+    };
+    
+    let dogFunc = (dog:Dog)=>{
+        console.log(dog.name);
+        console.log(dog.color);
+    };
+    
+    //animalFunc=dogFunc;  //오류
+    dogFunc=animalFunc;
+    ```
+    
+    - 이 예시를 통해서 알아보면 현재 여기서는 Animal 타입이 Dog타입의 수퍼타입이다. 하지만 이 타입들이 함수에서 매개변수로 사용이 되었을때를 알아보자. animalFunc=dogFunc의 경우 dogFunc는 Dog타입이므로 color 프로퍼티에 접근하게 된다. 하지만 animalFunc의 Animal 타입에는 color프로퍼티가 존재하지 않는다. 그러므로  이 동작은 오류이다.
+
+- 추가) 매개변수의 개수가 다를 때  → 개수가 작은거에서 큰것으로 이동할때 제대로 동작
+
+```tsx
+type Func1 = (a: number, b: number) => void;
+type Func2 = (a: number) => void;
+
+let func1: Func1 = (a, b) => {};
+let func2: Func2 = (a) => {};
+
+func1 = func2; // ✅
+func2 = func1; // ❌
+```
+
+### 함수 오버로딩
+
+- 함수를 매개변수의 개수나 타입에 따라 여러가지 버전으로 정의하는 방법
+- 오버로드 시그니처 생성(오버로딩을 위한 version들 제작)
+    - 함수의 구현부 없이 선언들만 나열
+    
+    ```tsx
+    // 버전들 -> 오버로드 시그니쳐
+    function func(a: number): void;
+    function func(a: number, b: number, c: number): void;
+    ```
+    
+           
+    
+    - 구현부 만들기
+    
+    ```tsx
+    function func(a: number, b?: number, c?: number) {
+      if (typeof b === "number" && typeof c === "number") {
+        console.log(a + b + c);
+      } else {
+        console.log(a * 20);
+      }
+    }
+    
+    func(1);        // ✅ 버전 1 - 오버로드 시그니쳐
+    func(1, 2);     // ❌
+    func(1, 2, 3);  // ✅ 버전 3 - 오버로드 시그니쳐
+    ```
+    
+    <aside>
+    💡
+    
+    **매개변수에 b? c? (물음표를) 붙인 이유** 
+    
+    첫번째 버전도 함께 만족(의미가 있게)하기 위해서 선택적 매개변수로 구성해줌
+    
+    </aside>
+    
+
+### 사용자 정의 타입 가드
+
+```tsx
+type Dog = {
+    name:string;
+    isBark:boolean;
+};
+
+type Cat = {
+    name:string;
+    isScratch:boolean;
+};
+
+type Animal = Dog | Cat;
+
+function isDog(animal:Animal): animal is Dog{
+    return (animal as Dog).isBark!=undefined;
+};
+
+function isCat(animal:Animal): animal is Cat{
+    return (animal as Cat).isScratch!=undefined;
+}
+
+function warning(animal : Animal){
+    if (isDog(animal)){
+			console.log(animal.isBark ? "짖습니다" : "안짖어요");
+    }
+    else if(isCat(animal)){
+			console.log(animal.isScratch ? "할큅니다" : "안할퀴어요");
+	  }
+}
+```
+
+- isDog함수와 isCat함수를 통해 개인지 고양이인지를 판단
+- 함수내에서 `animal as Dog`부분 → 타입 좁히기
+- `animal is Dog` 부분 → 리턴값이 true일때 타입 가드 효과를 통해 Dog 타입임을 보장해
+- section6
+    
+    ### 인터페이스
+    
+    - 상호간에 약속된 규칙
+    - 객체의 구조를 정의하는데 특화된 문법
+    
+    ```tsx
+    interface Person {
+      readonly name: string;
+      age?: number;
+      sayHi: () => void;
+      sayHi: (a: number, b: number) => void; // ❌
+    }  //호출 시그니처를 통해 메서드의 타입을 정의하여 오버로딩을 구현해야 
+    ```
+    
+    ### 인터페이스 확장(상속)
+    
+    - 아래처럼 비슷한 형태의 인터페이스들은 중복 코드들이 많이 존재
+    
+    ```tsx
+    interface Animal {
+      name: string;
+      age: number;
+    }
+    
+    interface Dog {
+      name: string;
+      age: number;
+      isBark: boolean;
+    }
+    
+    interface Cat {
+      name: string;
+      age: number;
+      isScratch: boolean;
+    }
+    
+    interface Chicken {
+      name: string;
+      age: number;
+      isFly: boolean;
+    }
+    ```
+    
+    - 인터페이스 확장 사용
+    
+    ```tsx
+    interface Animal {
+      name: string;
+      color: string;
+    }
+    
+    interface Dog extends Animal {
+      breed: string;
+    }
+    
+    interface Cat extends Animal {
+      isScratch: boolean;
+    }
+    
+    interface Chicken extends Animal {
+      isFly: boolean;
+    }
+    ```
+    
+    - 인터페이스 재정의
+        - extend후 프로퍼티의 타입을 재정의 할 수 있음( 단, 원본의 자식 타입이여야함)
+        
+        ```tsx
+        interface Animal {
+        2  name: string;
+        3  color: string;
+        4}
+        5
+        6interface Dog extends Animal {
+        7  name: "doldol"; // 타입 재 정의
+        8  breed: string;
+        9}
+        ```
+        
+    
+    - 다중확장
+        
+        ```tsx
+        interface DogCat extends Dog, Cat {}
+        
+        const dogCat: DogCat = {
+          name: "",
+          color: "",
+          breed: "",
+          isScratch: true,
+        };
+        ```
+        
+    
+    ### 인터페이스 선언 합치기
+    
+    - 타입과 달리 인터페이스는 중복 선언이 가능함  → 그리고 합쳐짐
+    
+    ```tsx
+    interface Person {
+      name: string;
+    }
+    
+    interface Person {
+      age: number;
+    }
+    
+    const person: Person = {
+      name: "이제원",
+      age: 25,
+    };
+    ```
+    
+    - 모듈 보강때 사용
+        - 이미 라이브러리에 존재하는 모듈에 보강을 하고 싶을때 사용
+- section7
+    
+    ### JS에서의 클래스 살펴보기
+    
+    - class 생성
+    
+    ```jsx
+    class Student{
+        //필드
+        name;
+        age;
+        grade;
+    
+        //생성자
+        constructor(name,age,grade){
+            this.name=name;
+            this.age=age;
+            this.grade=grade;
+        }
+    
+        //메서드
+        study(){
+            console.log('공부');
+        }
+    
+        introduce(){
+            console.log(`안녕하세요 ${this.name}입니다`);
+        }
+    }
+    
+    let studentB=new Student("이제원",25,"A");
+    console.log(studentB);
+    studentB.study();
+    studentB.introduce();
+    ```
+    
+    - 클래스 상속
+        - constructor부분에서 super는 부모의 생성자부분을 이용한다는 뜻
+    
+    ```tsx
+    class StudentDeveloper extends Student {
+      // 필드
+      favoriteSkill;
+    
+      // 생성자
+      constructor(name, grade, age, favoriteSkill) {
+        super(name, grade, age);
+        this.favoriteSkill = favoriteSkill;
+      }
+    
+      // 메서드
+      programming() {
+        console.log(`${this.favoriteSkill}로 프로그래밍 함`);
+      }
+    }
+    ```
+    
+    ### 타입스크립트에서의 클래스
+    
+    ```tsx
+    class Employee{
+        //필드
+        name:string;
+        age:number;
+        position:string;
+    
+        //생성자
+        constructor(name:string,age:number,position:string){
+            this.name=name;
+            this.age=age;
+            this.position=position;
+        }
+    
+        work(){
+            console.log('일하는중')
+        }
+    }
+    
+    const employeeB=new Employee("이제원",25,'개발자');
+    console.log(employeeB);
+    
+    ```
+    
+    - 클래스를 타입으로 활용하기
+        - 타입스크립트는 구조적 타입 시스템을 따르기 때문에 가능
+        
+        ```tsx
+        //클래스를 타입으로 활용하기 
+        const employeeC:Employee={
+            name:'',
+            age:0,
+            position:'',
+            work(){},
+        };
+        ```
+        
+    
+    - 클래스 상속받기
+        
+        ```tsx
+        class ExecutiveOfficer extends Employee {
+          officeNumber: number;
+        
+          constructor(name: string,age: number,position: string,officeNumber: number) {
+            super(name, age, position);
+            this.officeNumber = officeNumber;
+          }
+        }
+        ```
+        
+    
+    ### 접근 제어자
+    
+        클래스를 만들때 특정 필드나 메서드의 접근 범위를 정하는것
+    
+    - **public**
+        - 모든 범위에서 접근 가능
+    - **private**
+        - 클래스 내부에서만 접근 가능
+    - **protected**
+        - 클래스 내부 또는 파생 클래스 내부에서만 접근 가능
+    - constructor에 접근 제어자를 설정해주면 →
+        
+        필드와 this.name=name과 같은 초기화가 필요하지 않다
+        
+        ```tsx
+        class Employee {
+          // 생성자
+          constructor(
+            private name: string,
+            protected age: number,
+            public position: string
+          ) {}
+        
+          // 메서드
+          work() {
+            console.log(`${this.name} 일함`);
+          }
+        }
+        ```
+        
+    
+    ### 인터페이스와 클래스
+    
+    <aside>
+    💡
+    
+    인터페이스는 **무조건 public필드만** 정의할 수 있음
+    
+    </aside>
+    
+    ```tsx
+    interface CharacterInterface {
+      name: string;
+      moveSpeed: number;
+      move(): void;
+    }
+    
+    class Character implements CharacterInterface {
+      constructor(
+        public name: string,
+        public moveSpeed: number,
+        private extra: string
+      ) {}
+    
+      move(): void {
+        console.log(`${this.moveSpeed} 속도로 이동`);
+      }
+    }
+    ```
+    
+- section8
+    
+    ### 제네릭이란?
+    
+    모든 타입에 두루두루 쓸 수 있는 범용적인 특성을 가진 것
+    
+    - 제네릭 함수 생성
+        - 제네릭 문법을 사용하여 함수에 10을 집어넣으면 num변수는 number타입으로 추론되고 true를 넣으면 bool변수는 boolean 타입이 된다.
+    
+    ```tsx
+    function func<T>(value:T):T{
+        return value;
+     }
+    
+     let num=func(10);
+     let bool=func(true);
+     let str=func('string');
+    ```
+    
+    ![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/171f996f-c2e1-4622-8f58-6654c9fc94c5/1104b282-0f69-4570-a8a5-63d42c84a9e6/image.png)
+    
+    <aside>
+    💡
+    
+    아래와 같이 제네릭 함수를 호출할 때 다음과 같이 타입 변수에 할당할 타입을 직접 명시하는 것도 가능(여기서는 튜플 타입)
+    
+    </aside>
+    
+    ```tsx
+    function func<T>(value: T): T {
+      return value;
+    }
+    
+    let arr = func<[number, number, number]>([1, 2, 3]);
+    ```
+    
+    ### 타입 변수 응용하기
+    
+    - **사례 1) 매개변수의 타입이 다를경우**  → 타입변수 U추가
+    
+    ```tsx
+    function swap<T, U>(a:T, b:U){
+        return[b,a];
+    }
+    
+    const [a,b]=swap('1',2);
+    console.log([a,b]);
+    ```
+    
+    - **사례2)  다양한 배열 타입을 인수로 받는 제네릭 함수를 만들어야 할때**  → 매개변수 T가 배열임을 표시하기 위해 T[]를 추가
+    
+    ```tsx
+    function returnFirstValue<T>(data: T[]) {
+      return data[0];
+    }
+    
+    let num = returnFirstValue([0, 1, 2]);
+    // number
+    
+    let str = returnFirstValue([1, "hello", "mynameis"]);
+    // number | string
+    ```
+    
+    - **사례3)  반환값의 타입을 첫번째 요소의 타입이 되도록 할때**     → `data: [T,...unknown]` 이것은 첫번째 원소의 타입만 신경쓰고 나머지 배열의 원소들의 타입은 신경쓰지 않겠다는 의미
+    
+    ```tsx
+    function returnFirstValue<T>(data: [T, ...unknown[]]) {
+      return data[0];
+    }
+    
+    let str = returnFirstValue([1, "hello", "mynameis"]);
+    // number
+    ```
+    
+    - **사례4)** → .length를 활용할 수 있는 타입을 한정하기 위해서 `T extends { length: number }` 라고 T의 범위를 제한한다.
+    
+    ```tsx
+    function getLength<T extends { length: number }>(data: T) {
+      return data.length;
+    }
+    
+    getLength("123");            // ✅
+    
+    getLength([1, 2, 3]);        // ✅
+    
+    getLength({ length: 1 });    // ✅
+    
+    getLength(undefined);        // ❌
+    
+    getLength(10);             // ❌
+    ```
+    
+    ### map, forEach
+    
+    - **map함수 정의**
+    
+    ```tsx
+    let arr=[1,2];
+    
+    function map<T>(arr:T[],callback: (item:T)=>T){
+        let result=[];
+        for(let i=0;i<arr.length;i++){
+            result.push(callback(arr[i]));
+        }
+    
+        return result;
+    }
+    
+    map(arr,(it)=>it*2);
+    ```
+    
+    ```tsx
+    
+    function map<T, U>(arr: T[], callback: (item: T) => U): U[] {
+      let result=[];
+        for(let i=0;i<arr.length;i++){
+            result.push(callback(arr[i]));
+        }
+    
+        return result;
+    }
+    
+    map(['hi','hello'], (it) => parseInt(it));
+    //parseInt함수는 number타입을 반환하므로
+    
+    ```
+    
+    - **forEach 함수 정의**
+    
+    ```tsx
+    const arr2 = [1, 2, 3];
+    function forEach<T>(arr: T[], callback: (item: T) => void) {
+      for (let i = 0; i < arr.length; i++) {
+        callback(arr[i]);
+      }
+    }
+    arr2.forEach((it) => console.log(it));
+    ```
+    
+    ### 제네릭 인터페이스 & 제네릭 타입 별칭
+    
+    - **제네릭 인터페이스**
+    
+    <aside>
+    💡
+    
+    주의) 제네릭 인터페이스를 사용할때에는 타입 변수에 할당할 타입을 지정해줘야 함 → `let keyPair: KeyPair<string, number> = {
+      key: "key",
+      value: 0,
+    };`
+    
+    </aside>
+    
+    ```tsx
+    interface KeyPair<K,V>{
+    	key:K;
+    	value:V;
+    }
+    
+    let keyPair: KeyPair<string, number> = {
+      key: "key",
+      value: 0,
+    };
+    
+    let keyPair2: KeyPair<boolean, string[]> = {
+      key: true,
+      value: ["1"],
+    };
+    ```
+    
+    - **제네릭 인터페이스와 인덱스 시그니처를 함께 사용하기**
+    
+    ```tsx
+    interface Map<V>{
+        [key:string]:V;
+    }
+    
+    let stringMap:Map<string>={
+        key:'value',
+    };
+    
+    let booleanMap:Map<boolean>={
+        key:true,
+    };
+    ```
+    
+    - **제네릭 타입 별칭**
+    
+    ```tsx
+    type Map2<V> = {
+      [key: string]: V;
+    };
+    
+    let stringMap2: Map2<string> = {
+      key: "string",
+    };
+    ```
+    
+    - **제네릭 인터페이스 활용 예시**
+        - 아래 코드에서는 User 인터페이스를 정의할때 Student와 Developer인터페이스의 union타입으로 정의했음
+        - 하지만 이렇게 하면 goToSchool함수를 실행할때 Student만 이 함수를 사용할 수 있도록 하기 위해서는 if문을 통한 타입 좁히기를 항상 실행해야 함
+    
+    ```tsx
+    interface Student {
+      type: "student";
+      school: string;
+    }
+    
+    interface Developer {
+      type: "developer";
+      skill: string;
+    }
+    
+    interface User {
+      name: string;
+      profile: Student | Developer;
+    }
+    
+    function goToSchool(user: User<Student>) {
+      if (user.profile.type !== "student") {
+        console.log("잘 못 오셨습니다");
+        return;
+      }
+    
+      const school = user.profile.school;
+      console.log(`${school}로 등교 완료`);
+    }
+    
+    const developerUser: User = {
+      name: "이제원",
+      profile: {
+        type: "developer",
+        skill: "typescript",
+      },
+    };
+    
+    const studentUser: User = {
+      name: "홍길동",
+      profile: {
+        type: "student",
+        school: "홍익대학교",
+      },
+    };
+    ```
+    
+    - 해결법 → 제네릭 인터페이스를 활용해보자
+        - 타입 좁히기를 사용할 필요가 없어짐
+        
+        ```tsx
+        interface Student {
+          type: "student";
+          school: string;
+        }
+        
+        interface Developer {
+          type: "developer";
+          skill: string;
+        }
+        
+        interface User<T> {
+          name: string;
+          profile: T;
+        }
+        
+        function goToSchool(user: User<Student>) {
+          const school = user.profile.school;
+          console.log(`${school}로 등교 완료`);
+        }
+        
+        const developerUser: User<Developer> = {
+          name: "이제원",
+          profile: {
+            type: "developer",
+            skill: "TypeScript",
+          },
+        };
+        
+        const studentUser: User<Student> = {
+          name: "홍길동",
+          profile: {
+            type: "student",
+            school: "홍익대학교",
+          },
+        };
+        ```
+        
+    
+    ### 제네릭 클래스
+    
+    ```tsx
+    class List<T> {
+      constructor(private list: T[]) {}
+    
+      (...)
+    }
+    
+    const numberList = new List([1, 2, 3]);
+    const stringList = new List<string>(["1", "2"]);
+    ```
+    
+    <aside>
+    💡
+    
+    제네릭 클래스에서는 
+    
+    `new List<number>([1, 2, 3]);` 처럼 위에서와 같이 <number> 이 부분을 생략 가능
+    
+    </aside>
